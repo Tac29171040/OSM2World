@@ -7,7 +7,6 @@ import static java.util.Collections.nCopies;
 import static java.util.Objects.hash;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
-import static org.osm2world.math.algorithms.GeometryUtil.isRightOf;
 import static org.osm2world.scene.color.Color.WHITE;
 import static org.osm2world.scene.mesh.MeshWithMetadata.MeshMetadata;
 import static org.osm2world.scene.mesh.MeshWithMetadata.merge;
@@ -29,7 +28,6 @@ import org.osm2world.math.shapes.TriangleXZ;
 import org.osm2world.scene.color.Color;
 import org.osm2world.scene.color.LColor;
 import org.osm2world.scene.material.*;
-import org.osm2world.util.FaultTolerantIterationUtil;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -724,24 +722,41 @@ public class MeshStore {
 
 		static Collection<TriangleXYZ> clipToBounds(TriangleXYZ triangle, List<LineSegmentXZ> boundingSegments) {
 
-			Collection<TriangleXYZ> splitTriangles = List.of(triangle);
-
-			for (LineSegmentXZ segment : boundingSegments) {
-
-				Collection<TriangleXYZ> newSplitTriangles = new ArrayList<>();
-
-				FaultTolerantIterationUtil.forEach(splitTriangles, t -> {
-					newSplitTriangles.addAll(t.split(segment.toLineXZ()));
-				});
-
-				newSplitTriangles.removeIf(it -> isRightOf(it.getCenter().xz(), segment.p1, segment.p2));
-
-				splitTriangles = newSplitTriangles;
-
+			// Clip the polygon before triangulating. A grazing intersection must never
+			// discard the other (potentially very large) part of a water triangle.
+			List<VectorXYZ> polygon = triangle.verticesNoDup();
+			if (boundingSegments.stream().allMatch(edge -> triangle.verticesNoDup().stream().allMatch(p -> side(edge, p) >= 0))) {
+				return List.of(triangle);
 			}
+			for (LineSegmentXZ edge : boundingSegments) {
+				if (polygon.isEmpty()) return List.of();
+				List<VectorXYZ> clipped = new ArrayList<>();
+				VectorXYZ previous = polygon.getLast();
+				double before = side(edge, previous);
+				for (VectorXYZ current : polygon) {
+					double after = side(edge, current);
+					if ((before < 0 && after > 0) || (before > 0 && after < 0)) {
+						clipped.add(GeometryUtil.interpolateBetween(previous, current, before / (before - after)));
+					}
+					if (after >= 0) clipped.add(current);
+					previous = current;
+					before = after;
+				}
+				polygon = clipped;
+			}
+			List<TriangleXYZ> result = new ArrayList<>();
+			for (int i = 2; i < polygon.size(); i++) {
+				VectorXYZ a = polygon.getFirst(), b = polygon.get(i - 1), c = polygon.get(i);
+				if (b.subtract(a).cross(c.subtract(a)).length() >= 2e-6) {
+					result.add(new TriangleXYZ(a, b, c));
+				}
+			}
+			return result;
+		}
 
-			return splitTriangles;
-
+		private static double side(LineSegmentXZ edge, VectorXYZ p) {
+			return (edge.p2.x - edge.p1.x) * (p.z - edge.p1.z)
+					- (edge.p2.z - edge.p1.z) * (p.x - edge.p1.x);
 		}
 
 	}

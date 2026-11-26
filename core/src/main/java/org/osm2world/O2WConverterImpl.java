@@ -221,6 +221,7 @@ class O2WConverterImpl {
 						new StreetFurnitureModule(),
 						new TrafficSignModule(),
 						new BicycleParkingModule(),
+						new HarbourModule(),
 						new WaterModule(),
 						new PoolModule(),
 						new GolfModule(),

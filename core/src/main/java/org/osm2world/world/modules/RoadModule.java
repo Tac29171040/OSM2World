@@ -1577,6 +1577,23 @@ public class RoadModule extends ConfigurableWorldModule {
 
 			List<Mesh> result = new ArrayList<>();
 
+			if (config.getBoolean("awajiCoast", false) && tags.containsKey("awaji:pier_walk_origin")) {
+				double origin = Double.parseDouble(tags.getValue("awaji:pier_walk_origin"));
+				double sign = Double.parseDouble(tags.getValue("awaji:pier_walk_sign"));
+				var left = getOutline(false); var right = getOutline(true);
+				double length = getStartPosition().distanceTo(getEndPosition());
+				int steps = Math.max(1, (int)Math.ceil(length / .5));
+				List<VectorXYZ> strip = new ArrayList<>();
+				for (int i=0; i<=steps; i++) {
+					double ratio=(double)i/steps;
+					double height=.008-.5*Math.clamp(sign*(ratio*length-origin)/8,0,1);
+					strip.add(org.osm2world.math.algorithms.GeometryUtil.interpolateBetween(left.getFirst(), left.getLast(), ratio).y(height));
+					strip.add(org.osm2world.math.algorithms.GeometryUtil.interpolateBetween(right.getFirst(), right.getLast(), ratio).y(height));
+				}
+				target.drawTriangleStrip(HarbourModule.CAP,strip,List.of());
+				return;
+			}
+
 			/* handrails */
 
 			if (!steps) { // renderStepsTo has handrails built in

@@ -164,16 +164,17 @@ public class WaterModule extends ConfigurableWorldModule {
 				List<VectorXYZ> rightWaterBorder = createLineBetween(
 						leftOutline, rightOutline, 0.95f);
 
-				modifyLineHeight(leftWaterBorder, -0.2f);
-				modifyLineHeight(rightWaterBorder, -0.2f);
+				boolean coast = config.getBoolean("awajiCoast", false);
+				modifyLineHeight(leftWaterBorder, coast ? -1.5f : -0.2f);
+				modifyLineHeight(rightWaterBorder, coast ? -1.5f : -0.2f);
 
 				List<VectorXYZ> leftGround = createLineBetween(
 						leftOutline, rightOutline, 0.35f);
 				List<VectorXYZ> rightGround = createLineBetween(
 						leftOutline, rightOutline, 0.65f);
 
-				modifyLineHeight(leftGround, -1);
-				modifyLineHeight(rightGround, -1);
+				modifyLineHeight(leftGround, coast ? -2.5f : -1);
+				modifyLineHeight(rightGround, coast ? -2.5f : -1);
 
 				/* render ground */
 
@@ -191,6 +192,7 @@ public class WaterModule extends ConfigurableWorldModule {
 				);
 
 				for (List<VectorXYZ> strip : strips) {
+					if (coast) { target.drawTriangleStrip(HarbourModule.BED, strip, List.of()); continue; }
 					target.drawTriangleStrip(TERRAIN_DEFAULT.get(config), strip,
 						texCoordLists(strip, TERRAIN_DEFAULT.get(config), GLOBAL_X_Z));
 				}
@@ -200,6 +202,7 @@ public class WaterModule extends ConfigurableWorldModule {
 				List<VectorXYZ> vs = createTriangleStripBetween(
 						leftWaterBorder, rightWaterBorder);
 
+				if (coast) { target.drawTriangleStrip(HarbourModule.WATER, vs, List.of()); return; }
 				target.drawTriangleStrip(WATER.get(config), vs,
 						texCoordLists(vs, WATER.get(config), GLOBAL_X_Z));
 
@@ -246,6 +249,10 @@ public class WaterModule extends ConfigurableWorldModule {
 
 			List<VectorXYZ> vertices = getOutlinePolygon().verticesNoDup();
 
+			if (config.getBoolean("awajiCoast", false)) {
+				for (double y : new double[]{-1.5, -2.5}) target.drawConvexPolygon(y == -1.5 ? HarbourModule.WATER : HarbourModule.BED, vertices.stream().map(p -> p.addY(y)).toList(), List.of());
+				return;
+			}
 			target.drawConvexPolygon(WATER.get(config), vertices,
 					texCoordLists(vertices, WATER.get(config), GLOBAL_X_Z));
 
@@ -280,6 +287,14 @@ public class WaterModule extends ConfigurableWorldModule {
 		@Override
 		public void buildMeshesAndModels(Target target) {
 			List<TriangleXYZ> triangles = getTriangulation();
+			if (config.getBoolean("awajiCoast", false)) {
+				for (double y : new double[]{-1.5, -2.5}) {
+					var shift = new VectorXYZ(0, y, 0);
+					target.drawTriangles(y == -1.5 ? HarbourModule.WATER : HarbourModule.BED,
+							triangles.stream().map(tri -> tri.shift(shift)).toList(), List.of());
+				}
+				return;
+			}
 			target.drawTriangles(WATER.get(config), triangles,
 					triangleTexCoordLists(triangles, WATER.get(config), GLOBAL_X_Z));
 		}

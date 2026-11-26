@@ -210,6 +210,11 @@ public class ExternalModelModule extends ConfigurableWorldModule {
 					? WorldModuleParseUtil.parseDirection(element.getTags(), PI)
 					: PI;
 
+			String offset = element.getTags().getValue("awaji:offset_y");
+			if (offset != null && element.getTags().containsKey("3dmr")) {
+				Double dy = ValueParseUtil.parseOsmDecimal(offset, null);
+				if (dy != null && Math.abs(dy) <= 3) pos = pos.addY(dy);
+			}
 			var i = new ModelInstance(model, new InstanceParameters(pos, direction));
 			return i.getMeshes();
 

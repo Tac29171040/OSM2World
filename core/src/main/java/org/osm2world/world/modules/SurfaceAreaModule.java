@@ -106,7 +106,8 @@ public class SurfaceAreaModule extends AbstractModule {
 			if (surface.equals(EMPTY_SURFACE_VALUE)) {
 				this.material = DefaultMaterials.TERRAIN_DEFAULT.get(config);
 			} else {
-				this.material = DefaultMaterials.getSurfaceMaterial(surface, DefaultMaterials.TERRAIN_DEFAULT, config).get(config);
+				if (config.getBoolean("awajiCoast", false) && area.getTags().contains("natural","beach")) this.material = HarbourModule.SAND;
+				else this.material = DefaultMaterials.getSurfaceMaterial(surface, DefaultMaterials.TERRAIN_DEFAULT, config).get(config);
 			}
 
 		}

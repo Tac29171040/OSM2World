@@ -14,9 +14,13 @@ public final class TestFileUtil {
 	/** loads a test file as a resource */
 	public static @Nonnull File getTestFile(String name) {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		var resource = classLoader.getResource(name);
+		var resource = classLoader.getResource(name.replace(File.separatorChar, '/'));
 		if (resource == null) throw new AssertionError("Test file '" + name + "' not found");
-		return new File(resource.getFile());
+		try {
+			return new File(resource.toURI());
+		} catch (java.net.URISyntaxException e) {
+			throw new AssertionError(e);
+		}
 	}
 
 	/** creates a temporary file for use in tests */

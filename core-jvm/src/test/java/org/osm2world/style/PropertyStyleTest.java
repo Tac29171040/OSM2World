@@ -63,7 +63,7 @@ public class PropertyStyleTest {
 	public void testGetTransparentVariant() {
 
 		var style = new PropertyStyle(new O2WConfig(Map.of(
-				"configBaseURI", "file:" + getTestFile("config").getAbsolutePath() + File.separator,
+				"configBaseURI", getTestFile("config").toURI().toString(),
 				"material_GLASS_TRANSPARENT_texture0_dir", "./textures/Glass",
 				"material_GLASS_TRANSPARENT_texture0_color_file", "./textures/Glass/Glass_Transparent_Color.png"
 		)));

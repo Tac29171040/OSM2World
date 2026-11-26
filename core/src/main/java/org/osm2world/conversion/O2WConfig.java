@@ -603,7 +603,9 @@ public class O2WConfig {
 
 		try {
 
-			URI fileURI = new URI(fileName);
+			File absolute = new File(fileName);
+			boolean windowsAbsolute = File.separatorChar == '\\' && absolute.isAbsolute();
+			URI fileURI = windowsAbsolute ? absolute.toURI() : new URI(fileName);
 
 			if (this.containsKey("configBaseURI")) {
 				URI base = new URI(this.getString("configBaseURI"));

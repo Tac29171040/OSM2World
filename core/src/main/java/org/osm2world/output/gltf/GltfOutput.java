@@ -737,6 +737,15 @@ public class GltfOutput extends AbstractOutput {
 				new ReplaceTexturesWithAtlas(t -> getResourceOutputSettings().modeForTexture(t) == REFERENCE),
 				new MergeMeshes(mergeOptions)));
 
+		// Preserve authored surface material groups on the Awaji review export.
+		// Combining water and bed after baking their tints produces one white
+		// shared material in runtime importers that omit per-vertex tint.
+		if (config.getBoolean("awajiCoast", false)) {
+			mergeOptions.add(MergeOption.SINGLE_COLOR_MESHES);
+			processingSteps.removeLast();
+			processingSteps.add(3, new MergeMeshes(mergeOptions));
+		}
+
 		if (clipToBounds && bounds != null) {
 			processingSteps.add(1, new ClipToBounds(bounds, true));
 		}

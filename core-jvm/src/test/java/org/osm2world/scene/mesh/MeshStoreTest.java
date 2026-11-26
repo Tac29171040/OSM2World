@@ -23,6 +23,16 @@ import org.osm2world.scene.material.Material;
 public class MeshStoreTest {
 
 	@Test
+	public void grazingCornerPreservesInteriorAndVerticalFaces() {
+		var bounds = getSegmentsCCW(new AxisAlignedRectangleXZ(0, 0, 10, 10));
+		var water = new TriangleXYZ(new VectorXYZ(-1e-13, 0, -1e-13),
+				new VectorXYZ(20, 0, 0), new VectorXYZ(0, 0, 20));
+		assertEquals(100, clipToBounds(water, bounds).stream().mapToDouble(TriangleXYZ::getArea).sum(), 1e-8);
+		var wall = new TriangleXYZ(new VectorXYZ(-10, 0, 5), new VectorXYZ(10, 0, 5), new VectorXYZ(10, 2, 5));
+		assertEquals(15, clipToBounds(wall, bounds).stream().mapToDouble(TriangleXYZ::getArea).sum(), 1e-8);
+	}
+
+	@Test
 	public void testMergeMeshes_Metadata() {
 
 		Material material = DefaultMaterials.CONCRETE.defaultAppearance();
