@@ -26,7 +26,8 @@ final class HarbourPatch extends NoOutlineWaySegmentWorldObject implements Proce
 		HarbourModule.CAP, HarbourModule.WALL, HarbourModule.TIDE,
 		HarbourModule.material(151, 151, 143), HarbourModule.material(118, 119, 113),
 		HarbourModule.material(84, 88, 84), HarbourModule.material(98, 100, 94),
-		HarbourModule.material(74, 79, 77), HarbourModule.BED, HarbourModule.WATER
+		HarbourModule.material(74, 79, 77), HarbourModule.BED, HarbourModule.WATER,
+		HarbourModule.material(140, 141, 134) // flush mortar in the rectangular apron slabs
 	};
 
 	record Batch(int material, float[] vertices) {}
