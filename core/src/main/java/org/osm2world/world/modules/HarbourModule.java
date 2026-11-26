@@ -22,7 +22,10 @@ public class HarbourModule extends ConfigurableWorldModule {
 
 	@Override public void applyTo(MapData data) {
 		if (!config.getBoolean("awajiCoast", false)) return;
+		var patches=HarbourPatch.read(config.resolveFileConfigProperty(config.getString("awajiPatchFile",null)));
 		for (var s : data.getMapWaySegments()) {
+			var batch=patches.get(s.getWay().getId());
+			if (s.getIndexInWay()==0 && batch!=null) s.addRepresentation(new HarbourPatch(s,batch));
 			if (s.getTags().containsKey("awaji:section")) s.addRepresentation(new HarbourSection(s));
 		}
 	}
@@ -73,7 +76,17 @@ public class HarbourModule extends ConfigurableWorldModule {
 			if (len < .002) return;
 			if (kind.equals("bank") || kind.equals("beach")) {
 				double width = kind.equals("beach") ? 25 : 4.5;
-				panel(t, kind.equals("beach") ? SAND : BANK, line, i, 0, width, 0, -2.5, 0);
+				Material bank = kind.equals("beach") ? SAND : BANK;
+				if (tags.contains("awaji:waterline", "split")) {
+					// The wet and dry slopes meet at a vertical 6 cm lip. Separate
+					// the water plane from grazing sand triangles in the depth buffer.
+					double mark = 0.6 * width;
+					panel(t, bank, line, i, 0, mark, 0, -1.47, 0);
+					panel(t, bank, line, i, mark, mark, -1.47, -1.53, 0);
+					panel(t, bank, line, i, mark, width, -1.53, -2.5, 0);
+				} else {
+					panel(t, bank, line, i, 0, width, 0, -2.5, 0);
+				}
 				return;
 			}
 			if (kind.equals("vertical")) {
@@ -86,7 +99,8 @@ public class HarbourModule extends ConfigurableWorldModule {
 				return;
 			}
 			boolean pier = kind.equals("pier"), crest = kind.equals("breakwater");
-			double left = kind.equals("quay") ? 0 : -2, right = kind.equals("quay") ? 1.5 : 2;
+			boolean bankWall = kind.equals("revetment");
+			double left = (kind.equals("quay") || bankWall) ? 0 : -2, right = (kind.equals("quay") || bankWall) ? 1.5 : 2;
 			double top = pier ? -.5 : crest ? 1 : 0;
 			// A land-connected structure transitions from the shore over its first 8 m.
 			boolean endAccess = tags.contains("awaji:access","end");
@@ -125,6 +139,7 @@ public class HarbourModule extends ConfigurableWorldModule {
 					panel(t,CAP,line,i,right-.35,right,y+1,y+1,end-y);
 				}
 			}
+			if (bankWall) return;
 			// Stations are measured continuously along the complete way.
 			double spacing = pier ? 5 : 10;
 			for (double station = spacing*(Math.ceil((distance-2)/spacing))+2; station < distance+len; station+=spacing) {
